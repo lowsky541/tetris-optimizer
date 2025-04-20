@@ -5,34 +5,38 @@ import (
 	"io"
 )
 
+type parserState int8
+
 const (
-	STATE_TETROMINO = iota
-	STATE_SEPARATOR = iota
+	STATE_TETROMINO parserState = iota
+	STATE_SEPARATOR
 )
 
-func tetrominize(lines [4]string, id uint8) (Tetromino, bool) {
-	table := Tetromino2D{}
+// Converts an unparsed tetromino into a usable structure.
+func tetrominize(lines [4]string, id int) (Tetromino, bool) {
+	piece := Tetromino2D{}
 
-	for li, line := range lines {
-		for ci, char := range line {
+	for lineIndex, line := range lines {
+		for charIndex, char := range line {
 			if char == '#' {
-				table[li][ci] = 1
+				piece[lineIndex][charIndex] = 1
 			} else if char == '.' {
-				table[li][ci] = 0
+				piece[lineIndex][charIndex] = 0
 			}
 		}
 	}
-	table = TetrominoCrop(table)
-	kind := TetrominoKind(table)
+
+	piece = TetrominoCrop(piece)
+	kind := TetrominoKind(piece)
 
 	if kind == -1 {
 		return Tetromino{}, false
 	}
 
-	return Tetromino{Table: table, Kind: kind, Id: id}, true
+	return Tetromino{Table: piece, Kind: kind, Id: id}, true
 }
 
-func check_tetro_line(text string) bool {
+func checkTetroLine(text string) bool {
 	for i, tc := range text {
 		if i < 4 && !(tc == '#' || tc == '.') {
 			return false
@@ -46,11 +50,11 @@ func check_tetro_line(text string) bool {
 func Parse(reader io.Reader) ([]Tetromino, error) {
 	tetrominoes := []Tetromino{}
 
-	state := STATE_TETROMINO // current parsing state
-	tetroN := uint8(0)       // count of tetrominoes
+	currentState := STATE_TETROMINO // current parsing state
+	tetroCount := 0                 // count of tetrominoes
 
 	for {
-		if state == STATE_TETROMINO {
+		if currentState == STATE_TETROMINO {
 			lines := [4]string{}
 			for i := 0; i < 4; i++ {
 				bytes := make([]byte, 5)
@@ -59,7 +63,7 @@ func Parse(reader io.Reader) ([]Tetromino, error) {
 					return nil, fmt.Errorf("expected tetromino; got EOF")
 				}
 
-				if !check_tetro_line(string(bytes)) {
+				if !checkTetroLine(string(bytes)) {
 					return nil, fmt.Errorf("invalid tetromino definition")
 				}
 
@@ -68,17 +72,17 @@ func Parse(reader io.Reader) ([]Tetromino, error) {
 				lines[i] = string(bytes)
 			}
 
-			tetroN++
+			tetroCount++
 
-			tetromino, valid := tetrominize(lines, tetroN)
+			tetromino, valid := tetrominize(lines, tetroCount)
 			if !valid {
-				return nil, fmt.Errorf("Invalid tetromino")
+				return nil, fmt.Errorf("invalid tetromino")
 			}
 
 			tetrominoes = append(tetrominoes, tetromino)
 
-			state = STATE_SEPARATOR
-		} else if state == STATE_SEPARATOR {
+			currentState = STATE_SEPARATOR
+		} else if currentState == STATE_SEPARATOR {
 			needle := make([]byte, 1)
 			_, err := io.ReadAtLeast(reader, needle, 1)
 			if err == io.EOF {
@@ -86,7 +90,7 @@ func Parse(reader io.Reader) ([]Tetromino, error) {
 			} else if needle[0] != '\n' {
 				return nil, fmt.Errorf("expected newline")
 			}
-			state = STATE_TETROMINO
+			currentState = STATE_TETROMINO
 		}
 	}
 

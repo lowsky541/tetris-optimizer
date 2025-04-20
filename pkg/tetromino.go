@@ -4,46 +4,58 @@ import (
 	"reflect"
 )
 
+type (
+	Board       [][]uint8
+	Tetromino2D [4][4]uint8
+)
+
+type Tetromino struct {
+	Id    int
+	Kind  int
+	Table Tetromino2D
+}
+
+type Point struct {
+	X int
+	Y int
+}
+
 const (
 	// Square tetromino
 	TT_Sq = iota
 
 	// Bar tetromino
-	TT_HB = iota
-	TT_VB = iota
+	TT_HB
+	TT_VB
 
 	// S tetromino
-	TT_SH = iota
-	TT_SV = iota
+	TT_SH
+	TT_SV
 
 	// Z tetromino
-	TT_ZH = iota
-	TT_ZV = iota
+	TT_ZH
+	TT_ZV
 
 	// L tetromino
-	TT_L0   = iota
-	TT_L90  = iota
-	TT_L180 = iota
-	TT_L270 = iota
+	TT_L0
+	TT_L90
+	TT_L180
+	TT_L270
 
 	// J tetromino
-	TT_J0   = iota
-	TT_J90  = iota
-	TT_J180 = iota
-	TT_J270 = iota
+	TT_J0
+	TT_J90
+	TT_J180
+	TT_J270
 
 	// T tetromino
-	TT_T0   = iota
-	TT_T90  = iota
-	TT_T180 = iota
-	TT_T270 = iota
+	TT_T0
+	TT_T90
+	TT_T180
+	TT_T270
 )
 
-// rules :
-//  - 2 cells with minimum adjacents = 1
-//  - 1 cell with minimum adjacents = 2
-
-var Tetrominoes = []Tetromino2D{
+var tetrominoes = []Tetromino2D{
 	// Square tetromino
 	{
 		{1, 1, 0, 0},
@@ -54,7 +66,7 @@ var Tetrominoes = []Tetromino2D{
 
 	// Bar tetromino
 	{
-		{1, 1, 1, 1}, // 2 cells with minimum adjacents = 1
+		{1, 1, 1, 1},
 		{0, 0, 0, 0},
 		{0, 0, 0, 0},
 		{0, 0, 0, 0},
@@ -173,8 +185,9 @@ var Tetrominoes = []Tetromino2D{
 	},
 }
 
+// Returns the kind of this tetromino piece.
 func TetrominoKind(piece Tetromino2D) int {
-	for index, tetro := range Tetrominoes {
+	for index, tetro := range tetrominoes {
 		if reflect.DeepEqual(tetro, piece) {
 			return index
 		}
@@ -182,44 +195,39 @@ func TetrominoKind(piece Tetromino2D) int {
 	return -1
 }
 
-func TetrominoOrigin(piece Tetromino2D) Point {
-	for y := 0; y < 4; y++ {
-		for x := 0; x < 4; x++ {
-			if piece[y][x] == 1 {
-				return Point{X: x, Y: y}
-			}
-		}
-	}
-	return Point{X: -1, Y: -1}
-}
-
+// Return a copy of the tetromino relocated to top-left corner of its "container."
+//
+// ....  => ##..
+// .##.  => ##..
+// .##.  => ....
+// ....  => ....
 func TetrominoCrop(mask Tetromino2D) Tetromino2D {
-	topMost, rightMost := 0, 0
+	topMost, leftMost := 0, 0
 
 foundTopMost:
-	for y := 0; y < 4; y++ {
-		for x := 0; x < 4; x++ {
-			if mask[y][x] == 1 {
-				topMost = y
+	for x := 0; x < 4; x++ {
+		for y := 0; y < 4; y++ {
+			if mask[x][y] == 1 {
+				topMost = x
 				break foundTopMost
 			}
 		}
 	}
 
-foundRightMost:
+foundLeftMost:
 	for x := 0; x < 4; x++ {
 		for y := 0; y < 4; y++ {
 			if mask[y][x] == 1 {
-				rightMost = x
-				break foundRightMost
+				leftMost = x
+				break foundLeftMost
 			}
 		}
 	}
 
 	replica := Tetromino2D{}
 	for y := topMost; y < 4; y++ {
-		for x := rightMost; x < 4; x++ {
-			replica[y-topMost][x-rightMost] = mask[y][x]
+		for x := leftMost; x < 4; x++ {
+			replica[y-topMost][x-leftMost] = mask[y][x]
 		}
 	}
 

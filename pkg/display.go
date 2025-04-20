@@ -2,17 +2,11 @@ package tetris_optimizer
 
 import "fmt"
 
-func DisplayTetro(tetro Tetromino2D) {
-	for y := range tetro {
-		for x := range tetro[y] {
-			n := tetro[y][x]
-			if n > 0 {
-				fmt.Print("\u001b[31m")
-			}
+func DisplayTetro(piece Tetromino2D) {
+	for y := range piece {
+		for x := range piece[y] {
+			n := piece[y][x]
 			fmt.Printf("%01d ", n)
-			if n > 0 {
-				fmt.Print("\u001b[0m")
-			}
 		}
 		fmt.Println()
 	}

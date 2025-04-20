@@ -11,9 +11,7 @@ const (
 	DYNAMIC_PRINTING_STEP    time.Duration = 1 * time.Millisecond
 )
 
-// Optimizer private functions
-
-func init_board(w int, h int) Board {
+func initBoard(w int, h int) Board {
 	a := make(Board, h)
 	for i := range a {
 		a[i] = make([]uint8, w)
@@ -21,7 +19,7 @@ func init_board(w int, h int) Board {
 	return a
 }
 
-func put_tetromino(board *Board, tetromino Tetromino, point Point, id uint8) bool {
+func putTetromino(board *Board, tetromino Tetromino, point Point, id uint8) bool {
 	// Determine if the piece will break free of the board
 	for py := 0; py < 4; py++ {
 		for px := 0; px < 4; px++ {
@@ -51,7 +49,7 @@ func put_tetromino(board *Board, tetromino Tetromino, point Point, id uint8) boo
 	return true
 }
 
-func rem_tetromino(board *Board, tetromino Tetromino, point Point) {
+func deleteTetromino(board *Board, tetromino Tetromino, point Point) {
 	for py := 0; py < 4; py++ {
 		for px := 0; px < 4; px++ {
 			if tetromino.Table[py][px] != 0 {
@@ -69,7 +67,7 @@ func backtrack(board *Board, stack []Tetromino, index uint8) bool {
 
 	for y := 0; y < len(*board); y++ {
 		for x := 0; x < len(*board); x++ {
-			if put_tetromino(board, stack[index], Point{x, y}, uint8(index+1)) {
+			if putTetromino(board, stack[index], Point{x, y}, uint8(index+1)) {
 
 				if DYNAMIC_PRINTING_ENABLED {
 					DisplayBoardAlpha(*board)
@@ -81,7 +79,7 @@ func backtrack(board *Board, stack []Tetromino, index uint8) bool {
 					return true
 				}
 
-				rem_tetromino(board, stack[index], Point{x, y})
+				deleteTetromino(board, stack[index], Point{x, y})
 			}
 		}
 	}
@@ -89,19 +87,17 @@ func backtrack(board *Board, stack []Tetromino, index uint8) bool {
 	return false
 }
 
-// Optimizer public functions
-
 func OptimizeTetrominoes(tetrominoes []Tetromino) Board {
 	success := false
 
 	// Minimum board size capable of handling all the tetrominoes
 	boardSize := int(math.Ceil(math.Sqrt(float64(len(tetrominoes) * 4))))
 
-	board := init_board(boardSize, boardSize)
+	board := initBoard(boardSize, boardSize)
 	for !success {
 		if !backtrack(&board, tetrominoes, 0) {
 			boardSize++
-			board = init_board(boardSize, boardSize)
+			board = initBoard(boardSize, boardSize)
 		} else {
 			success = true
 		}
